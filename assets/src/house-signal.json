@@ -1,0 +1,9 @@
+{
+  "date": "2026-08-28",
+  "generator": "/opt/fleet/lib/gen-image.sh",
+  "deployment": "factory-image",
+  "size": "1536x1024",
+  "quality": "high",
+  "prompt": "Use case: stylized-concept. Asset type: wide PWA landing and empty-state illustration. A compact orthographic cutaway apartment with three ordinary rooms: kitchen dishes at left, laundry basket and washer center, plant and broom at right; no people. 16-bit demoscene pixel art with deliberate crisp square pixels, dark midnight navy grid, warm amber window light, mint-cyan stepped circuit routes visibly connecting the household objects, parchment cream details, subtle CRT dithering but no blur. Wide balanced composition, calm practical domestic mood, useful dark negative space around edges. No text, no letters, no watermark, no logos, no brands, no people, no faces, no coins, no badges, no points, no gradients, no photorealism.",
+  "review": "Accepted after visual inspection: no text artifacts, people, brands, misleading UI, or visible seams; household objects and circuit routes are coherent with the product palette."
+}

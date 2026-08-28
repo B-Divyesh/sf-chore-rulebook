@@ -1,0 +1,10 @@
+{
+  "slug": "chore-rulebook",
+  "title": "Chore Rulebook",
+  "territory": "utilities",
+  "user": "A household sharing recurring chores who needs transparent assignment rules and a lightweight completion history, without gamifying domestic work or requiring every member to create an account.",
+  "smallest_useful_product": "Offline shared-device PWA with named people, chores, interval/effort, rotation or fixed-owner rule, a 'why assigned' explanation, and a local history export.",
+  "artifact_class": "pwa-offline",
+  "monetization": "one-time",
+  "constraints": "No child profiling or behavioral scoring; device-local data and printable QR pairing; support accessibility and plain-language assignments."
+}
