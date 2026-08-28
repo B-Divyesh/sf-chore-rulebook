@@ -39,8 +39,21 @@ test('creates a household, explains a rotation, records work, and persists it', 
 
 test('has no serious accessibility violations in the empty state', async ({ page }) => {
   await page.goto('/');
-  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  // Axe's published type currently targets a newer Playwright patch than the
+  // factory-pinned browser version; the runtime Page contract is compatible.
+  const results = await new AxeBuilder({ page: page as never }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(results.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
+});
+
+test('opens and closes the setup dialog from the keyboard with focus restored', async ({ page }) => {
+  await page.goto('/');
+  const trigger = page.getByRole('button', { name: 'Set up this household' });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(trigger).toBeFocused();
 });
 
 test('legal pages render directly with one main heading', async ({ page }) => {

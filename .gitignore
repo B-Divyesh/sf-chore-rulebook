@@ -3,4 +3,8 @@ dist/
 .env
 *.log
 graphify-out/
+test-results/
+playwright-report/
+*.tsbuildinfo
 .DS_Store
+.factory/evidence/

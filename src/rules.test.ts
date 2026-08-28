@@ -25,6 +25,14 @@ describe('assignment rules', () => {
     expect(result.unavailable).toBe(true);
   });
 
+  it('passes full missed intervals when that recovery rule is selected', () => {
+    const daily = { ...chore, intervalDays: 1, missedPolicy: 'advance' as const };
+    const history: Completion[] = [{ id: '1', choreId: 'dishes', personId: 'a', completedAt: '2026-08-25T12:00:00Z', dueAt: '2026-08-25' }];
+    const result = assignmentFor(daily, people, history, new Date('2026-08-28T12:00:00Z'));
+    expect(result.person?.name).toBe('Alex');
+    expect(result.explanation).toContain('2 missed turns have passed');
+  });
+
   it('totals recorded effort over the last seven days', () => {
     const history: Completion[] = [{ id: '1', choreId: 'dishes', personId: 'a', completedAt: '2026-08-27T12:00:00Z', dueAt: '2026-08-27' }];
     expect(weeklyEffort(people, [chore], history, new Date('2026-08-28T12:00:00Z')).get('a')).toBe(20);

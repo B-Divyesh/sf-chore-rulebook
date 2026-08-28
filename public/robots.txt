@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://chore-rulebook.sociobot.in/sitemap.xml

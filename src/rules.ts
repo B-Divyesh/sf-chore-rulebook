@@ -55,34 +55,29 @@ export function assignmentFor(
     };
   }
 
-  let person: Person;
+  const missedAdvances = chore.missedPolicy === 'advance' ? Math.floor(overdueDays / chore.intervalDays) : 0;
+  const previousIndex = last ? Math.max(0, people.findIndex((item) => item.id === last.personId)) : -1;
+  const baseIndex = last ? previousIndex + 1 : stableIndex(chore.id, people.length);
+  const start = (baseIndex + missedAdvances) % people.length;
+  let person = people[start] ?? available[0];
   let skipped = 0;
-  if (!last) {
-    const start = stableIndex(chore.id, people.length);
-    person = people[start] ?? available[0];
-    while (!person.available && skipped < people.length) {
-      skipped += 1;
-      person = people[(start + skipped) % people.length];
-    }
-  } else {
-    const previousIndex = Math.max(0, people.findIndex((item) => item.id === last.personId));
-    let offset = 1;
-    person = people[(previousIndex + offset) % people.length] ?? available[0];
-    while (!person.available && offset <= people.length) {
-      skipped += 1;
-      offset += 1;
-      person = people[(previousIndex + offset) % people.length] ?? available[0];
-    }
+  while (!person.available && skipped < people.length) {
+    skipped += 1;
+    person = people[(start + skipped) % people.length];
   }
 
-  const turn = last
-    ? `${person.name} follows ${people.find((item) => item.id === last.personId)?.name ?? 'the previous turn'} in household order.`
+  const turn = missedAdvances
+    ? `${person.name} receives the turn after ${missedAdvances} missed ${missedAdvances === 1 ? 'interval' : 'intervals'} passed in household order.`
+    : last
+      ? `${person.name} follows ${people.find((item) => item.id === last.personId)?.name ?? 'the previous turn'} in household order.`
     : `${person.name} starts this rotation from its stable place in household order.`;
   const absence = skipped ? ` ${skipped} away ${skipped === 1 ? 'person was' : 'people were'} skipped.` : '';
   const recovery = overdueDays
     ? chore.missedPolicy === 'hold'
       ? ` It is ${overdueDays} ${overdueDays === 1 ? 'day' : 'days'} late, so the turn stays here until it is recorded.`
-      : ` It is late; completing it advances the next turn normally.`
+      : missedAdvances
+        ? ` ${missedAdvances} missed ${missedAdvances === 1 ? 'turn has' : 'turns have'} passed to the next available person.`
+        : ' It is late, but not by a full interval, so the current turn remains.'
     : '';
 
   return { person, dueAt, overdueDays, unavailable: false, explanation: `${turn}${absence}${recovery}` };
