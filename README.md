@@ -15,7 +15,7 @@ Live product: <https://chore-rulebook.sociobot.in>
 - Each assignment includes a plain-language reason.
 - Completion history can be exported as JSON or CSV.
 - JSON backups can be restored on this device.
-- The versioned app shell works offline after the first visit.
+- The app works offline after the first visit.
 - The free rulebook accepts six chores.
 - A $12 one-time Plus purchase adds unlimited chores and printable QR pairing.
 - Privacy and terms routes at `/privacy` and `/terms`
@@ -29,8 +29,7 @@ npm ci
 npm run dev
 ```
 
-Open the printed local URL. No environment variables or external services are
-needed for the free/local workflow.
+Open the printed local URL.
 
 ## Test and build
 

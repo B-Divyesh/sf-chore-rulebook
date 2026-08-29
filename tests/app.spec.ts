@@ -20,6 +20,9 @@ test('first screen has one job heading, both first actions, and three visible fa
   await expect(page.locator('.principles li')).toHaveCount(3);
   const facts = await page.locator('.principles').boundingBox();
   expect((facts?.y ?? 0) + (facts?.height ?? 0)).toBeLessThanOrEqual(await page.evaluate(() => innerHeight));
+  await expect(page.locator('figcaption')).toHaveText('The sample shows chores, assignments, and household rules on one shared device.');
+  await expect(page.locator('footer')).toContainText('Your household data stays on this device.');
+  await expect(page.locator('footer')).not.toContainText('Private by default.');
 });
 
 test('creates a household, explains a rotation, records work, and persists it', async ({ page }) => {
@@ -79,12 +82,53 @@ test('opens and closes the setup dialog from the keyboard with focus restored', 
 });
 
 test('legal pages render directly with one main heading', async ({ page }) => {
-  for (const path of ['/privacy', '/terms']) {
+  const routes = [
+    { path: '/privacy', title: 'Privacy — Chore Rulebook', heading: 'Privacy' },
+    { path: '/terms', title: 'Terms — Chore Rulebook', heading: 'Terms' },
+  ];
+  for (const { path, title, heading } of routes) {
     await page.goto(path);
     await expect(page.locator('main')).toBeVisible();
     await expect(page.locator('h1')).toHaveCount(1);
+    await expect(page.locator('h1')).toHaveText(heading);
+    await expect(page).toHaveTitle(title);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://chore-rulebook.sociobot.in${path}`);
+    await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   }
+});
+
+test('demo has route-specific metadata and navigation moves focus', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page).toHaveTitle('Demo — Chore Rulebook');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://chore-rulebook.sociobot.in/demo');
+  await page.getByRole('button', { name: 'People' }).click();
+  await expect(page.locator('h1')).toBeFocused();
+  await page.getByRole('link', { name: 'Privacy' }).click();
+  await expect(page).toHaveURL('/privacy');
+  await expect(page.locator('h1')).toHaveText('Privacy');
+  await expect(page.locator('h1')).toBeFocused();
+  await page.goBack();
+  await expect(page.locator('h1')).toHaveText('People and availability');
+  await expect(page.locator('h1')).toBeFocused();
+});
+
+test('designed 404 has metadata, legal links, mobile fit, and no serious accessibility violations', async ({ page }) => {
+  await page.goto('/404.html');
+  await expect(page).toHaveTitle('Page not found — Chore Rulebook');
+  await expect(page.locator('h1')).toHaveText('Page not found');
+  await expect(page.locator('h1')).toHaveCount(1);
+  await expect(page.locator('main')).toBeVisible();
+  await expect(page.locator('header')).toBeVisible();
+  await expect(page.locator('footer')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+  await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /requested Chore Rulebook page/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://chore-rulebook.sociobot.in/404');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
+  const results = await new AxeBuilder({ page: page as never }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations.filter((item) => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
 });
 
 test('reloads the installed shell while offline', async ({ page, context }) => {
@@ -104,6 +148,7 @@ test('Back restores the view named by the URL', async ({ page }) => {
   await page.goBack();
   await expect(page).toHaveURL(/view=people/);
   await expect(page.getByRole('heading', { name: 'People and availability', exact: true }).first()).toBeVisible();
+  await expect(page.locator('h1')).toBeFocused();
   await expect(page.getByRole('heading', { name: 'Move, back up, or unlock' })).toBeHidden();
 });
 

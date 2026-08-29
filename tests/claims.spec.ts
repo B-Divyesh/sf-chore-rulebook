@@ -1,15 +1,21 @@
 import { expect, test } from '@playwright/test';
 
-test('@claim:offline-reload works after the HTTP cache is cleared', async ({ page, context }) => {
-  await page.goto('/demo');
-  await page.evaluate(() => navigator.serviceWorker.ready);
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
-  const session = await context.newCDPSession(page);
-  await session.send('Network.clearBrowserCache');
-  await context.setOffline(true);
-  await page.reload();
-  await expect(page.getByText('Demo — sample data, nothing is saved to your rulebook')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Today’s household chores' })).toBeVisible();
+test('@claim:offline-reload works after the HTTP cache is cleared', async ({ browser }) => {
+  const context = await browser.newContext();
+  try {
+    const page = await context.newPage();
+    await page.goto('/demo');
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    const session = await context.newCDPSession(page);
+    await session.send('Network.clearBrowserCache');
+    await context.setOffline(true);
+    await page.reload();
+    await expect(page.getByText('Demo — sample data, nothing is saved to your rulebook')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Today’s household chores' })).toBeVisible();
+  } finally {
+    await context.close();
+  }
 });
 
 test('@claim:device-local free actions send requests only to this origin', async ({ page }) => {

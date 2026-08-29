@@ -13,7 +13,7 @@ let view: View = 'today';
 let unlocked = cachedUnlock();
 let returnFocus: HTMLElement | null = null;
 let undoTimer = 0;
-const BUILD_ID = '1.0.5';
+const BUILD_ID = '1.0.6';
 
 const uid = () => crypto.randomUUID();
 const esc = (value: string | number | undefined) => String(value ?? '')
@@ -52,8 +52,8 @@ function shell(): void {
       <div id="view-root">${legal ? legalPage(location.pathname) : renderView()}</div>
     </main>
     <footer>
-      <p>Private by default. Your household data stays on this device.</p>
-      <nav aria-label="Legal and product information"><a href="/demo">Demo</a><a href="/privacy" data-route="legal">Privacy</a><a href="/terms" data-route="legal">Terms</a><button class="link-button" data-view="about">About</button></nav>
+      <p>Your household data stays on this device.</p>
+      <nav aria-label="Legal and product information"><a href="/demo">Demo</a><a href="/privacy" data-route="legal">Privacy</a><a href="/terms" data-route="legal">Terms</a></nav>
       <p class="generated-note">Built by Param Factory · v${BUILD_ID} · Original house illustration generated with the factory image model.</p>
     </footer>
     <dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
@@ -118,7 +118,7 @@ function onboarding(): string {
       <div class="hero-actions"><a class="primary button-link" href="/demo">Try it with sample data</a><button class="secondary" data-action="start">Set up this household</button></div><p class="action-note">The sample opens a ready-made household. Setup starts your private rulebook.</p>
       <ul class="principles"><li><span aria-hidden="true">01</span> Stored on this device</li><li><span aria-hidden="true">02</span> Works offline after the first visit</li><li><span aria-hidden="true">03</span> Free for six chores</li></ul>
     </div>
-    <figure class="hero-art"><picture><source srcset="/assets/house-signal-480.webp 480w, /assets/house-signal.webp 768w" sizes="(max-width: 600px) 100vw, 55vw" type="image/webp"><img src="/assets/house-signal.png" width="768" height="512" alt="A pixel-art cutaway home where glowing routes connect dishes, laundry, plants, and a broom" decoding="async" fetchpriority="high"></picture><figcaption>One home. Visible rules. Shared understanding.</figcaption></figure>
+    <figure class="hero-art"><picture><source srcset="/assets/house-signal-480.webp 480w, /assets/house-signal.webp 768w" sizes="(max-width: 600px) 100vw, 55vw" type="image/webp"><img src="/assets/house-signal.png" width="768" height="512" alt="A pixel-art cutaway home where glowing routes connect dishes, laundry, plants, and a broom" decoding="async" fetchpriority="high"></picture><figcaption>The sample shows chores, assignments, and household rules on one shared device.</figcaption></figure>
   </section><section class="landing-details" aria-labelledby="how-heading"><p class="eyebrow">HOW IT WORKS</p><h2 id="how-heading">Set rules in three steps</h2><ol><li><strong>Add people.</strong> Keep household order and mark anyone away.</li><li><strong>Write chore rules.</strong> Choose rotation or a fixed owner.</li><li><strong>Record completions.</strong> See the next assignment and its reason.</li></ol><h2>What stays private</h2><p>Names, rules, and history remain in browser storage. The app has no accounts, ads, analytics, or household-data server.</p></section>`;
 }
 

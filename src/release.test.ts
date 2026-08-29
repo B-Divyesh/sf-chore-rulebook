@@ -15,6 +15,36 @@ describe('static deployment policy', () => {
     expect(config.globalHeaders['X-Content-Type-Options']).toBe('nosniff');
   });
 
+  it('serves the install manifest with a web manifest content type', () => {
+    expect(config.mimeTypes['.webmanifest']).toBe('application/manifest+json');
+  });
+
+  it('ships the 404 with the site skeleton, route metadata, and plain heading', () => {
+    const page = readFileSync('public/404.html', 'utf8');
+    expect(page).toContain('<h1 id="not-found-title">Page not found</h1>');
+    expect(page).toContain('<header>');
+    expect(page).toContain('<main id="main">');
+    expect(page).toContain('<footer>');
+    expect(page).toContain('href="/privacy"');
+    expect(page).toContain('href="/terms"');
+    expect(page).toContain('name="description"');
+    expect(page).toContain('rel="canonical"');
+    expect(page).toContain('property="og:title"');
+    expect(page).toContain('name="twitter:card"');
+  });
+
+  it('keeps reviewed copy plain and ships a verb-first catalog sentence', () => {
+    const appSource = readFileSync('src/main.ts', 'utf8');
+    const readme = readFileSync('README.md', 'utf8');
+    const catalog = readFileSync('.factory/catalog-description.txt', 'utf8').trim();
+    expect(appSource).not.toContain('One home. Visible rules. Shared understanding.');
+    expect(appSource).not.toContain('Private by default.');
+    expect(readme).not.toContain('versioned app shell');
+    expect(readme).not.toContain('free/local workflow');
+    expect(catalog.length).toBeLessThanOrEqual(120);
+    expect(catalog).toMatch(/^(Add|Build|Choose|Create|Explain|Keep|Know|Plan|Record|Rotate|Run|Set|Share|Track)\b/);
+  });
+
   it('assigns immutable caching to hashed application assets', () => {
     const assetRoutes = config.routes.filter((route: { route: string }) => route.route.startsWith('/assets/'));
     expect(assetRoutes.every((route: { headers: Record<string, string> }) => route.headers['Cache-Control'].includes('immutable'))).toBe(true);

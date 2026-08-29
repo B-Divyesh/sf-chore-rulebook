@@ -15,6 +15,9 @@
   "responseOverrides": {
     "404": { "rewrite": "/404.html" }
   },
+  "mimeTypes": {
+    ".webmanifest": "application/manifest+json"
+  },
   "globalHeaders": {
     "Content-Security-Policy": "default-src 'self'; base-uri 'self'; connect-src 'self' https://api.sociobot.in; font-src 'self'; form-action 'self' https://api.sociobot.in; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests",
     "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
