@@ -21,6 +21,13 @@
     "sandbox": "fresh /demo context; download JSON; assert sample household, people, chores, and completions"
   },
   {
+    "id": "json-restore",
+    "claim": "Restores a valid Chore Rulebook JSON backup and keeps it after reload",
+    "where": "Data, README",
+    "test": "npm run test:claims -- --grep @claim:json-restore",
+    "sandbox": "fresh /demo context; export the sample JSON, change availability, import the export, and assert the restored setting survives reload"
+  },
+  {
     "id": "csv-export",
     "claim": "Exports completion history as CSV",
     "where": "History, Data, README",
@@ -96,5 +103,12 @@
     "where": "Data, Terms, README",
     "test": "npm run test:claims -- --grep @claim:plus-purchase",
     "sandbox": "fresh /demo context; assert the price and checkout URL; request the gateway without following redirects and require a Dodo checkout redirect"
+  },
+  {
+    "id": "license-revocation",
+    "claim": "A revoked Household Plus license returns paid features to free limits",
+    "where": "Data, Terms, README",
+    "test": "npm run test:claims -- --grep @claim:license-revocation",
+    "sandbox": "fresh /demo context with a stale cached valid license; mock a revoked verification verdict; assert Plus is removed and the seventh chore is stopped"
   }
 ]

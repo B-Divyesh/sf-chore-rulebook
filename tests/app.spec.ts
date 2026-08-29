@@ -143,6 +143,24 @@ test('rejects malformed typed fields and remains usable after reload', async ({ 
   await expect(page.getByRole('heading', { name: 'Move and back up your data' })).toBeVisible();
 });
 
+test('replaces raw JSON parser text with a recovery step and keeps the Data view focused', async ({ page }) => {
+  await page.goto('/demo?view=data');
+  const importButton = page.getByRole('button', { name: 'Import JSON' });
+  await importButton.click();
+  await page.getByLabel('Choose a Chore Rulebook JSON backup').setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{not json') });
+  await expect(page.locator('#toast')).toHaveText('This file is not valid JSON. Choose a Chore Rulebook JSON backup and try again.');
+  await expect(page.locator('#toast')).not.toContainText('Expected property name');
+  await expect(page.getByRole('heading', { name: 'Move and back up your data' })).toBeVisible();
+  expect(await page.evaluate(async () => {
+    const request = indexedDB.open('demo:chore-rulebook', 1);
+    const db = await new Promise<IDBDatabase>((resolve, reject) => { request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+    const stored = await new Promise<{ householdName: string }>((resolve, reject) => { const read = db.transaction('household').objectStore('household').get('current'); read.onsuccess = () => resolve(read.result); read.onerror = () => reject(read.error); });
+    db.close();
+    return stored.householdName;
+  })).toBe('Cedar House');
+  await expect(importButton).toBeFocused();
+});
+
 test('desktop and mobile views stay within the viewport with 44px controls', async ({ page }) => {
   await page.goto('/demo?view=people');
   const peopleWidth = await page.evaluate(() => document.documentElement.scrollWidth);

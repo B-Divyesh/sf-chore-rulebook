@@ -14,6 +14,7 @@ Live product: <https://chore-rulebook.sociobot.in>
 - Fixed-owner rules keep the same person responsible.
 - Each assignment includes a plain-language reason.
 - Completion history can be exported as JSON or CSV.
+- JSON backups can be restored on this device.
 - The versioned app shell works offline after the first visit.
 - The free rulebook accepts six chores.
 - A $12 one-time Plus purchase adds unlimited chores and printable QR pairing.
@@ -55,7 +56,8 @@ fonts, or runtime CDNs.
 
 The free rulebook supports six chores with rules, history, and exports.
 Household Plus costs $12 once and adds unlimited chores and printable QR
-pairing. Sociobot/Dodo handles checkout and refunds as merchant of record.
+pairing. Sociobot/Dodo handles checkout and refunds as merchant of record. If a
+refund revokes a license, paid features return to free limits.
 
 ## Project notes
 

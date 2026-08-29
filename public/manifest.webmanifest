@@ -3,7 +3,7 @@
   "short_name": "Rulebook",
   "description": "Explainable household chore rotations, stored on your device.",
   "id": "/",
-  "start_url": "/?v=1.0.4",
+  "start_url": "/?v=1.0.5",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0A101C",

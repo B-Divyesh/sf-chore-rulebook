@@ -13,7 +13,7 @@ let view: View = 'today';
 let unlocked = cachedUnlock();
 let returnFocus: HTMLElement | null = null;
 let undoTimer = 0;
-const BUILD_ID = '1.0.4';
+const BUILD_ID = '1.0.5';
 
 const uid = () => crypto.randomUUID();
 const esc = (value: string | number | undefined) => String(value ?? '')
@@ -160,7 +160,7 @@ function historyView(): string {
 function dataView(): string {
   return `<section class="page-lead"><div><p class="eyebrow">YOUR DATA</p><h2>Move, back up, or unlock</h2><p>The rulebook is device-local. Export it whenever you want.</p></div></section>
     <div class="data-grid">
-      <section><span class="section-pixel" aria-hidden="true">↧</span><h3>Backup and restore</h3><p>JSON preserves the whole rulebook. CSV provides a simple completion ledger.</p><div class="button-row"><button class="primary" data-action="export-json">Export JSON</button><button class="secondary" data-action="import-json">Import JSON</button><label class="sr-only" for="import-file">Choose a Chore Rulebook JSON backup</label><input class="sr-only" type="file" id="import-file" accept="application/json,.json"></div></section>
+      <section><span class="section-pixel" aria-hidden="true">↧</span><h3>Backup and restore</h3><p>JSON preserves the whole rulebook. CSV provides a simple completion ledger.</p><div class="button-row"><button class="primary" data-action="export-json">Export JSON</button><button class="secondary" data-action="import-json" aria-controls="import-file">Import JSON</button><label class="sr-only" for="import-file">Choose a Chore Rulebook JSON backup</label><input class="sr-only" type="file" id="import-file" accept="application/json,.json"></div></section>
       <section><span class="section-pixel" aria-hidden="true">⌁</span><h3>Pair another device</h3><p>Create a printable QR containing this snapshot. Data travels in the QR—not through a server.</p><button class="secondary" data-action="pair">Create pairing sheet</button></section>
       <section class="plus-card"><span class="section-pixel" aria-hidden="true">+</span><p class="eyebrow">HOUSEHOLD PLUS</p><h3>${unlocked ? 'Plus is active' : '$12 one-time purchase'}</h3><p>${unlocked ? 'Unlimited chores and printable device pairing are active on this device.' : 'Free includes up to 6 chores, all core rules, history, and exports. Plus adds unlimited chores and printable QR pairing.'}</p>${unlocked ? '<p class="success-text">✓ License active</p>' : `<a class="primary button-link" href="${checkoutUrl}">Buy Household Plus</a><button class="link-button restore" data-action="restore-license">Have a license? Restore it</button>`}<p class="fine-print">Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license.</p></section>
     </div>`;
@@ -336,8 +336,22 @@ async function importFile(event: Event): Promise<void> {
     const imported = validateImport(JSON.parse(await file.text()));
     if (!confirm(`Replace this device’s rulebook with “${imported.householdName || 'Unnamed household'}” (${imported.people.length} people, ${imported.chores.length} chores)? Export first if you need the current data.`)) return;
     state = imported; await persist('Backup imported.');
-  } catch (error) { toast(error instanceof Error ? error.message : 'That file could not be imported.'); }
-  input.value = '';
+  } catch (error) { toast(importErrorMessage(error)); }
+  finally {
+    input.value = '';
+    document.querySelector<HTMLButtonElement>('[data-action="import-json"]')?.focus();
+  }
+}
+
+function importErrorMessage(error: unknown): string {
+  if (error instanceof SyntaxError) return 'This file is not valid JSON. Choose a Chore Rulebook JSON backup and try again.';
+  const knownMessages = new Set([
+    'That file does not contain a Chore Rulebook backup.',
+    'That backup format is not supported. Choose a JSON export from Chore Rulebook.',
+    'That backup has invalid fields and was not imported.',
+  ]);
+  if (error instanceof Error && knownMessages.has(error.message)) return error.message;
+  return 'That backup could not be read. Choose a Chore Rulebook JSON backup and try again.';
 }
 
 async function pairingModal(): Promise<void> {

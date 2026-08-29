@@ -36,6 +36,29 @@ test('@claim:json-export downloads every sample collection', async ({ page }) =>
   expect(state.completions).toHaveLength(4);
 });
 
+test('@claim:json-restore replaces changed data with a valid backup and persists it', async ({ page }) => {
+  await page.goto('/demo?view=data');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export JSON' }).click();
+  const backup = Buffer.from(await (await import('node:fs/promises')).readFile(await (await downloadPromise).path() as string));
+
+  await page.getByRole('button', { name: 'People' }).click();
+  const alexAvailability = page.getByRole('checkbox').first();
+  await expect(alexAvailability).toBeChecked();
+  await alexAvailability.focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('checkbox').first()).not.toBeChecked();
+
+  await page.getByRole('button', { name: 'Data' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByLabel('Choose a Chore Rulebook JSON backup').setInputFiles({ name: 'cedar-house-backup.json', mimeType: 'application/json', buffer: backup });
+  await expect(page.locator('#toast')).toHaveText('Backup imported.');
+  await page.getByRole('button', { name: 'People' }).click();
+  await expect(page.getByRole('checkbox').first()).toBeChecked();
+  await page.reload();
+  await expect(page.getByRole('checkbox').first()).toBeChecked();
+});
+
 test('@claim:csv-export downloads one row for each completion', async ({ page }) => {
   await page.goto('/demo?view=history');
   const downloadPromise = page.waitForEvent('download');
@@ -212,4 +235,35 @@ test('@claim:plus-purchase opens the registered $12 one-time checkout', async ({
   const response = await request.get(await buy.getAttribute('href') as string, { maxRedirects: 0 });
   expect(response.status()).toBe(303);
   expect(response.headers().location).toMatch(/^https:\/\/checkout\.dodopayments\.com\/session\//);
+});
+
+test('@claim:license-revocation locks paid limits after a revoked verdict', async ({ page }) => {
+  let releaseRevocation: (() => void) | undefined;
+  const revokedResponse = new Promise<void>((resolve) => { releaseRevocation = resolve; });
+  let verificationRequested = false;
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:chore-rulebook', 'revoked-test-license');
+    localStorage.setItem('sb_license:chore-rulebook:verdict', JSON.stringify({ valid: true, checkedAt: Date.now() - 86_400_001 }));
+  });
+  await page.route('https://api.sociobot.in/api/v1/products/chore-rulebook/verify?license=revoked-test-license', async (route) => {
+    verificationRequested = true;
+    await revokedResponse;
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ valid: false, reason: 'revoked', expires_at: null }) });
+  });
+
+  await page.goto('/demo?view=data');
+  await expect(page.getByRole('heading', { name: 'Plus is active' })).toBeVisible();
+  await expect.poll(() => verificationRequested).toBe(true);
+  releaseRevocation?.();
+  await expect(page.getByText('License no longer active. Free features and your data are unchanged.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '$12 one-time purchase' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Chores' }).click();
+  for (const name of ['Vacuum hallway', 'Put bins out']) {
+    await page.locator('#view-root').getByRole('button', { name: 'Add chore' }).click();
+    await page.getByLabel('Chore name').fill(name);
+    await page.getByRole('dialog').getByRole('button', { name: 'Add chore', exact: true }).click();
+  }
+  await page.locator('#view-root').getByRole('button', { name: 'Add chore' }).click();
+  await expect(page.getByText('The free rulebook holds 6 chores. Household Plus removes that limit.')).toBeVisible();
 });
