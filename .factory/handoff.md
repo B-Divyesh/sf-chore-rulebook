@@ -1,4 +1,22 @@
-# Polish 2 handoff — Chore Rulebook
+# Verification 6 handoff — Chore Rulebook
+
+- Candidate commit: `19ad45d05cc827f38c6d14a2cb559865f1ea026a`
+- Live URL: <https://chore-rulebook.sociobot.in>
+- Date: 2026-08-29 UTC
+- Result: **PASS**
+
+Independent QA found the deployment to be byte-identical to the freshly built
+candidate. All 16 required claim commands, unit tests, TypeScript check,
+production build, and full Playwright suite passed. Live cold-read/demo,
+normal and recovery workflows, 390 px mobile, keyboard/focus, axe
+serious/critical, console/page errors, privacy request logging, headers,
+caching, PWA offline reload/update, and license rate limiting passed.
+
+The observed license endpoint allowance is 30 client requests per window;
+request 31 returned `429` with `Retry-After: 3`. No product defects at any
+severity were found. Complete evidence: `.factory/verification-6.md`.
+
+## Previous builder handoff
 
 - Work order: `chore-rulebook-polish-2`
 - Repair commit: `a6d0d74fa979bbcc8ada7d4c5cec893daeca48b3`
