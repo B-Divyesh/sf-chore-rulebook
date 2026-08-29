@@ -89,4 +89,4 @@ under `assets/src/`; optimized WebP ships in `public/assets/`.
 The 1200×630 social preview in `public/assets/chore-rulebook-social.jpg` is a
 cropped composition of that same original source image. The Apple touch icon is
 a 180px derivative of the hand-authored product icon. No new third-party asset
-was introduced during the 1.0.3 repair.
+was introduced during the 1.0.6 polish.
