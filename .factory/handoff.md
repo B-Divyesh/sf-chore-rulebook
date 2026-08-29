@@ -1,34 +1,27 @@
-# Verification handoff — Chore Rulebook 1.0.5
+# Review handoff — Chore Rulebook review 1
 
-- Work order: `chore-rulebook-verify-4`
-- Verified candidate: `97e365f518aec83d61f1d7bc0804ab4b3547286a`
-- Live URL: <https://chore-rulebook.sociobot.in>
-- Verified: 2026-08-29 UTC
-- Result: **PASS — accepted for release**
+- Work order: `chore-rulebook-review-1`
+- Reviewed: 2026-08-29 UTC
+- Result: **FAIL**
 
-Fresh independent QA passed all 16 mandatory claim commands, `npm run check`
-(12 unit tests, TypeScript, production build, and 60 desktop/mobile browser
-tests), live accessibility/privacy checks, PWA offline reload and update,
-routing/headers/caching, and live checkout/rate-limit verification. The live
-downloadable production artifacts byte-match this candidate.
+No product code was modified. The independent review is recorded in
+[`review-1.md`](review-1.md).
 
-## How to verify
+## Verification performed
 
-```sh
-npm ci
-npm run check
-```
+- Fresh live Chromium checks at 390 × 844 and 1440 × 900.
+- Live demo entry, reset, exit-to-real isolation, same-origin request log, and
+  service-worker offline reload.
+- All 16 exact commands in `.factory/claims.json`, each after `npm ci`:
+  passed.
+- Local unit tests, TypeScript check, and production build passed. The full
+  end-to-end suite was not used as acceptance evidence in this review because
+  every required claim was run independently.
+- Live route/title/metadata/header inspection and Back/focus check.
 
-Run each exact command in `.factory/claims.json` separately to reproduce the
-claims gate. The one-click demo is `/demo`; its `demo:chore-rulebook` storage
-is separate from a real `chore-rulebook` rulebook.
+## Remaining work
 
-## Known gap
-
-The live manifest is sent as `application/octet-stream`. Chromium still parses
-it and all PWA/offline checks pass, so it is low severity and not a release
-blocker. Configure the host to return `application/manifest+json` (or JSON)
-for `.webmanifest` in a follow-up. No blocker, high, or medium defects remain.
-
-Full evidence and exact observations are in
-[`.factory/verification-4.md`](verification-4.md).
+The live manifest still returns `application/octet-stream`, the known unfixed
+gap from the earlier handoff; this is a blocker under the review history rule.
+The review also records a 404 skeleton/metadata gap and four plain-language or
+claims-manifest copy findings. See `review-1.md` for exact fixes and evidence.
