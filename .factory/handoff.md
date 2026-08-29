@@ -1,48 +1,58 @@
-# Review handoff — Chore Rulebook review 2
+# Polish 2 handoff — Chore Rulebook
 
-- Work order: `chore-rulebook-review-2`
-- Reviewed source: `7bc0ba6bc88d96d8c069656dd6db0f04d2466e20`
+- Work order: `chore-rulebook-polish-2`
+- Repair commit: `a6d0d74fa979bbcc8ada7d4c5cec893daeca48b3`
+- Deployment: `d62a2d5c-65ef-42e9-83e8-7c34aacf4012`
 - Live target: <https://chore-rulebook.sociobot.in>
-- Result: **FAIL — three minor findings; no product code was changed.**
+- Result: **PASS — all cumulative review findings closed.**
 
-## What was done
+## Delivered
 
-- Performed a fresh 390 px and desktop first-read audit of the live site.
-- Entered the one-click demo, checked its populated first state, reset/exit
-  controls, IndexedDB namespace isolation, same-origin request log, and offline
-  reload after service-worker control.
-- Read the brief, design thesis, claim manifest, demo contract, README, prior
-  review/polish history, handoff, and source.
-- Ran every claim command listed in `.factory/claims.json` independently from a
-  fresh clone, then ran the full quality gate.
-- Checked live route metadata, 404, manifest MIME, internal links, mobile
-  overflow, history focus behavior, and prior-finding closure.
+- A consistent 44 px site header navigation on landing, demo, Privacy, Terms,
+  and 404; the existing pixel-signal product identity remains intact.
+- Accurate title and canonical metadata for every deep-linkable app view.
+- Plain, claim-covered checkout and license copy; no untested merchant or
+  refund-handling promise remains.
+- PWA version bumped to 1.0.7, including the service worker, manifest start
+  URL, and visible build IDs.
+- Updated verb-first catalog description and copy audit.
 
-## Verification
+## Exact verification
 
-Fresh clone: `/tmp/chore-rulebook-review-2.PwsAzv`
+Fresh final clone: `/tmp/chore-rulebook-polish-2-final.6BxOVO`.
 
 ```sh
 npm ci
-# each command in .factory/claims.json, separately
+# all 16 individual commands declared in .factory/claims.json
 npm run check
 ```
 
-All 16 registered claim commands passed. `npm run check` passed: 15 unit tests,
-TypeScript, production build, and 64 Playwright tests. Live demo requests were
-same-origin only; demo data remained in `demo:chore-rulebook`, and the real
-`chore-rulebook` namespace survived Reset and Start for real. Offline live
-`/demo` reload passed after the worker became active.
+All 16 claim commands passed independently. `npm run check` passed with 15
+Vitest tests, TypeScript, production build, and 68 Playwright checks. The build
+produces `dist/index.html`; initial app JS is 15.40 kB gzip and CSS is 5.57 kB
+gzip.
+
+Post-deploy, `verify-url.sh` passed `/`, `/demo`, `/privacy`, and `/terms`.
+Live route, title, header-link, 44 px target, mobile-overflow, 404, manifest,
+offline-reload, and copy checks passed. Live Playwright axe scans found zero
+serious/critical findings on all product routes and views. Lighthouse mobile
+was 99 performance / 100 accessibility, with 1.1 s LCP and CLS 0.
+
+Evidence and every finding-to-fix mapping: `.factory/polish-2.md`; screenshots
+and reports: `.factory/evidence/polish-2/` (workspace evidence, intentionally
+ignored by Git).
+
+## Run and deploy
+
+```sh
+npm ci
+npm run dev
+npm run check
+npm run build
+/opt/fleet/lib/deploy-static.sh chore-rulebook dist
+```
 
 ## Remaining work
 
-See `.factory/review-2.md` for the full evidence and copy audit.
-
-1. **F-2-1:** make the header navigation consistent on landing, demo, legal,
-   and 404 routes.
-2. **F-2-2:** update `document.title` when a deep-linkable in-app view changes.
-3. **F-2-3:** register and prove, or remove, the refund/merchant-of-record
-   promise in README and Terms.
-
-No deployment, infrastructure, billing, or product code was modified by this
-review.
+None. The product is deployed as a static, offline-first PWA. There are no
+known gaps.
