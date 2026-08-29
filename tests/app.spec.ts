@@ -11,6 +11,7 @@ async function buildHousehold(page: import('@playwright/test').Page) {
 
 test('first screen has one job heading, both first actions, and three visible facts', async ({ page }) => {
   await page.goto('/');
+  await expect(page).toHaveTitle('Chore Rulebook — clear household rotations');
   await expect(page.locator('h1')).toHaveText('Know whose turn it is—and why');
   await expect(page.locator('h1')).toHaveCount(1);
   await expect(page.getByText('For households sharing recurring chores')).toBeVisible();
@@ -170,9 +171,9 @@ test('recovers from invalid data already stored by an older release', async ({ p
   await expect(page.getByText('Invalid saved data was set aside.')).toBeVisible();
 });
 
-test('does not offer the unregistered checkout', async ({ page }) => {
+test('offers the registered one-time Household Plus checkout', async ({ page }) => {
   await page.goto('/demo?view=data');
-  await expect(page.getByText('New Plus purchases are not available.')).toBeVisible();
-  await expect(page.locator('a[href*="/checkout"]')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '$12 one-time purchase' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Buy Household Plus' })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/chore-rulebook/checkout');
   await expect(page.getByRole('button', { name: 'Have a license? Restore it' })).toBeVisible();
 });

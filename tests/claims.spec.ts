@@ -110,3 +110,106 @@ test('@claim:demo-isolation resets sample data without touching real data', asyn
   await page.getByRole('link', { name: 'Start for real' }).click();
   await expect(page.getByText('Real Home').first()).toBeVisible();
 });
+
+test('@claim:fixed-owner keeps the same person after completion and reload', async ({ page }) => {
+  await page.goto('/demo');
+  let card = page.locator('.assignment-card').filter({ hasText: 'Water the plants' });
+  await expect(card.locator('.assignee')).toContainText('Bo');
+  await card.getByRole('button', { name: 'Mark done' }).click();
+  await expect(page.getByLabel('Who completed it?')).toHaveValue('demo-bo');
+  await page.getByRole('button', { name: 'Record completion' }).click();
+  await page.reload();
+  card = page.locator('.assignment-card').filter({ hasText: 'Water the plants' });
+  await expect(card.locator('.assignee')).toContainText('Bo');
+  await card.getByText('Why this assignment?').click();
+  await expect(card).toContainText('owner does not change after completion');
+});
+
+test('@claim:missed-turn-advance reports passed full intervals', async ({ page }) => {
+  await page.goto('/demo');
+  await page.evaluate(async () => {
+    const request = indexedDB.open('demo:chore-rulebook', 1);
+    const db = await new Promise<IDBDatabase>((resolve, reject) => { request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+    const state = await new Promise<any>((resolve, reject) => { const read = db.transaction('household').objectStore('household').get('current'); read.onsuccess = () => resolve(read.result); read.onerror = () => reject(read.error); });
+    const completion = state.completions.find((item: { id: string }) => item.id === 'demo-done-2');
+    const oldDate = new Date();
+    oldDate.setUTCDate(oldDate.getUTCDate() - 30);
+    completion.completedAt = oldDate.toISOString();
+    completion.dueAt = oldDate.toISOString().slice(0, 10);
+    await new Promise<void>((resolve, reject) => { const tx = db.transaction('household', 'readwrite'); tx.objectStore('household').put(state, 'current'); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
+    db.close();
+  });
+  await page.reload();
+  const card = page.locator('.assignment-card').filter({ hasText: 'Clean the bathroom' });
+  await card.getByText('Why this assignment?').click();
+  await expect(card).toContainText(/missed turns have passed/);
+});
+
+test('@claim:plus-unlimited-chores permits a seventh chore', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:chore-rulebook', 'cached-test-license');
+    localStorage.setItem('sb_license:chore-rulebook:verdict', JSON.stringify({ valid: true, checkedAt: Date.now() }));
+  });
+  await page.goto('/demo?view=chores');
+  for (const name of ['Vacuum hallway', 'Put bins out', 'Clean windows']) {
+    await page.locator('#view-root').getByRole('button', { name: 'Add chore' }).click();
+    await page.getByLabel('Chore name').fill(name);
+    await page.getByRole('dialog').getByRole('button', { name: 'Add chore', exact: true }).click();
+  }
+  await expect(page.locator('.rules-table tbody tr')).toHaveCount(7);
+  await page.reload();
+  await expect(page.locator('.rules-table tbody tr')).toHaveCount(7);
+});
+
+test('@claim:license-token-only sends one token and no household data', async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes('/api/v1/products/chore-rulebook/verify')) {
+        (window as typeof window & { __licenseRequest?: { url: string; method: string; body: BodyInit | null } }).__licenseRequest = {
+          url,
+          method: init?.method ?? 'GET',
+          body: init?.body ?? null,
+        };
+        return new Response(JSON.stringify({ valid: false, reason: 'invalid', expires_at: null }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return nativeFetch(input, init);
+    };
+  });
+  await page.goto('/demo?view=data');
+  await page.getByRole('button', { name: 'Have a license? Restore it' }).click();
+  await page.getByLabel('License token').fill('license-regression-token');
+  await page.getByRole('button', { name: 'Verify license' }).click();
+  await expect(page.getByRole('alert')).toContainText('That license is not active');
+  const observed = await page.evaluate(() => (window as typeof window & { __licenseRequest?: { url: string; method: string; body: BodyInit | null } }).__licenseRequest);
+  expect(observed?.method).toBe('GET');
+  expect(observed?.body).toBeNull();
+  expect([...new URL(observed?.url as string).searchParams.entries()]).toEqual([['license', 'license-regression-token']]);
+  expect(JSON.stringify(observed)).not.toContain('Cedar House');
+});
+
+test('@claim:private-runtime uses no account or third-party runtime', async ({ page }) => {
+  const origins = new Set<string>();
+  page.on('request', (request) => origins.add(new URL(request.url()).origin));
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'People' }).click();
+  await page.getByRole('checkbox').first().focus();
+  await page.keyboard.press('Space');
+  await page.getByRole('button', { name: 'History' }).click();
+  await expect(page.locator('input[type="email"], input[type="password"], [href*="login"], [href*="signin"]')).toHaveCount(0);
+  await expect(page.locator('script[src^="http"], iframe')).toHaveCount(0);
+  expect([...origins]).toEqual(['http://127.0.0.1:4173']);
+  const resourceOrigins = await page.evaluate(() => [...new Set(performance.getEntriesByType('resource').map((entry) => new URL(entry.name).origin))]);
+  expect(resourceOrigins).toEqual(['http://127.0.0.1:4173']);
+});
+
+test('@claim:plus-purchase opens the registered $12 one-time checkout', async ({ page, request }) => {
+  await page.goto('/demo?view=data');
+  await expect(page.getByRole('heading', { name: '$12 one-time purchase' })).toBeVisible();
+  const buy = page.getByRole('link', { name: 'Buy Household Plus' });
+  await expect(buy).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/chore-rulebook/checkout');
+  const response = await request.get(await buy.getAttribute('href') as string, { maxRedirects: 0 });
+  expect(response.status()).toBe(303);
+  expect(response.headers().location).toMatch(/^https:\/\/checkout\.dodopayments\.com\/session\//);
+});

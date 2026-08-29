@@ -54,5 +54,47 @@
     "where": "Demo banner, README",
     "test": "npm run test:claims -- --grep @claim:demo-isolation",
     "sandbox": "fresh context; create real household; enter and reset /demo; return to real mode and assert original household remains"
+  },
+  {
+    "id": "fixed-owner",
+    "claim": "A fixed-owner chore stays with the same person after completion and reload",
+    "where": "chore editor, Today, README",
+    "test": "npm run test:claims -- --grep @claim:fixed-owner",
+    "sandbox": "fresh /demo context; complete the fixed-owner sample chore; reload; assert the owner remains Bo"
+  },
+  {
+    "id": "missed-turn-advance",
+    "claim": "An advance rule passes a rotating turn after each full missed interval",
+    "where": "chore editor, About, README",
+    "test": "npm run test:claims -- --grep @claim:missed-turn-advance",
+    "sandbox": "fresh /demo context; age the sample completion by multiple intervals; assert the visible explanation reports passed turns"
+  },
+  {
+    "id": "plus-unlimited-chores",
+    "claim": "A valid Household Plus license removes the six-chore limit",
+    "where": "Data, Terms, README",
+    "test": "npm run test:claims -- --grep @claim:plus-unlimited-chores",
+    "sandbox": "fresh /demo context with a current cached valid verdict; add a seventh chore and assert it persists"
+  },
+  {
+    "id": "license-token-only",
+    "claim": "License verification sends only the saved license token and no household data",
+    "where": "Data, Privacy, README",
+    "test": "npm run test:claims -- --grep @claim:license-token-only",
+    "sandbox": "fresh /demo context; intercept verification; assert GET, a single license query value, no request body, and no household text"
+  },
+  {
+    "id": "private-runtime",
+    "claim": "The app has no accounts, ads, analytics, third-party scripts, or household-data server",
+    "where": "landing, About, Privacy, README",
+    "test": "npm run test:claims -- --grep @claim:private-runtime",
+    "sandbox": "fresh /demo context; use the household workflow; assert all resources and requests are same-origin and no account controls are present"
+  },
+  {
+    "id": "plus-purchase",
+    "claim": "Household Plus costs $12 once and opens the registered Sociobot checkout",
+    "where": "Data, Terms, README",
+    "test": "npm run test:claims -- --grep @claim:plus-purchase",
+    "sandbox": "fresh /demo context; assert the price and checkout URL; request the gateway without following redirects and require a Dodo checkout redirect"
   }
 ]

@@ -16,7 +16,7 @@ Live product: <https://chore-rulebook.sociobot.in>
 - Completion history can be exported as JSON or CSV.
 - The versioned app shell works offline after the first visit.
 - The free rulebook accepts six chores.
-- Existing Plus licenses add unlimited chores and printable QR pairing.
+- A $12 one-time Plus purchase adds unlimited chores and printable QR pairing.
 - Privacy and terms routes at `/privacy` and `/terms`
 
 ## Develop
@@ -51,12 +51,11 @@ URL fragment; it does not upload it. License verification sends only the saved
 license token to `api.sociobot.in`. There are no analytics, ads, third-party
 fonts, or runtime CDNs.
 
-## Existing Plus licenses
+## Household Plus
 
-The free rulebook supports six chores with rules, history, and exports. Existing
-Household Plus licenses add unlimited chores and printable QR pairing. New Plus
-purchases are not available because the billing product is not registered. The
-app does not link to a checkout that cannot complete.
+The free rulebook supports six chores with rules, history, and exports.
+Household Plus costs $12 once and adds unlimited chores and printable QR
+pairing. Sociobot/Dodo handles checkout and refunds as merchant of record.
 
 ## Project notes
 

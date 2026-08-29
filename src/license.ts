@@ -1,6 +1,7 @@
 const key = 'sb_license:chore-rulebook';
 const verdictKey = `${key}:verdict`;
 const verifyUrl = 'https://api.sociobot.in/api/v1/products/chore-rulebook/verify';
+export const checkoutUrl = 'https://api.sociobot.in/api/v1/products/chore-rulebook/checkout';
 
 interface Verdict { valid: boolean; checkedAt: number }
 
