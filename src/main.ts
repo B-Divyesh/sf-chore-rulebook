@@ -1,7 +1,8 @@
 import './styles.css';
-import { emptyState, loadState, saveState, validateImport } from './db';
+import { consumedRecoveryNotice, emptyState, isDemoMode, loadState, resetDemoState, saveState, validateImport } from './db';
 import { assignmentFor, dateOnly, weeklyEffort } from './rules';
-import { cachedUnlock, captureLicense, checkoutUrl, saveLicense, storedLicense, verifyLicense } from './license';
+import { cachedUnlock, captureLicense, saveLicense, storedLicense, verifyLicense } from './license';
+import { decodePairing, encodePairing } from './pairing';
 import type { Chore, HouseholdState } from './types';
 
 type View = 'today' | 'people' | 'chores' | 'history' | 'data' | 'about';
@@ -12,6 +13,7 @@ let view: View = 'today';
 let unlocked = cachedUnlock();
 let returnFocus: HTMLElement | null = null;
 let undoTimer = 0;
+const BUILD_ID = '1.0.3';
 
 const uid = () => crypto.randomUUID();
 const esc = (value: string | number | undefined) => String(value ?? '')
@@ -34,26 +36,45 @@ function icon(name: 'home'|'people'|'chores'|'history'|'data'|'info'|'check'|'pl
 
 function shell(): void {
   const legal = location.pathname === '/privacy' || location.pathname === '/terms';
-  const title = legal ? (location.pathname === '/privacy' ? 'Privacy' : 'Terms') : 'Chore Rulebook';
-  document.title = legal ? `${title} — Chore Rulebook` : 'Chore Rulebook — clear household rotations';
+  const landing = !legal && !state.householdName;
+  const title = legal ? (location.pathname === '/privacy' ? 'Privacy' : 'Terms') : pageHeading();
+  document.title = legal ? `${title} — Chore Rulebook` : isDemoMode() ? 'Demo — Chore Rulebook' : `${title} — Chore Rulebook`;
+  updateMetadata(legal ? location.pathname : isDemoMode() ? '/demo' : '/');
   app.innerHTML = `
     <header class="site-header">
-      <a class="brand" href="/" data-route="home" aria-label="Chore Rulebook home"><span class="brand-mark" aria-hidden="true">⌂</span><span>CHORE<br>RULEBOOK</span></a>
+      <a class="brand" href="${isDemoMode() ? '/demo' : '/'}" data-route="home" aria-label="Chore Rulebook home"><span class="brand-mark" aria-hidden="true">⌂</span><span>CHORE<br>RULEBOOK</span></a>
       <div class="signal"><span class="signal-dot"></span><span>${navigator.onLine ? 'DEVICE READY' : 'OFFLINE · SAVED HERE'}</span></div>
     </header>
-    ${legal ? '' : navigation()}
-    <main id="main" tabindex="-1">
-      <h1>${esc(title)}</h1>
+    ${isDemoMode() && !legal ? demoBanner() : ''}
+    ${legal || landing ? '' : navigation()}
+    <main id="main" tabindex="-1" class="${landing ? 'landing-main' : ''}">
+      ${landing ? '' : `<h1 class="page-title" tabindex="-1">${esc(title)}</h1>`}
       <div id="view-root">${legal ? legalPage(location.pathname) : renderView()}</div>
     </main>
     <footer>
       <p>Private by default. Your household data stays on this device.</p>
-      <nav aria-label="Legal and product information"><a href="/privacy" data-route="legal">Privacy</a><a href="/terms" data-route="legal">Terms</a><button class="link-button" data-view="about">About</button></nav>
-      <p class="generated-note">House illustration generated for Chore Rulebook with the factory image model.</p>
+      <nav aria-label="Legal and product information"><a href="/demo">Demo</a><a href="/privacy" data-route="legal">Privacy</a><a href="/terms" data-route="legal">Terms</a><button class="link-button" data-view="about">About</button></nav>
+      <p class="generated-note">Built by Param Factory · v${BUILD_ID} · Original house illustration generated with the factory image model.</p>
     </footer>
     <dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
+    <div id="route-status" class="sr-only" role="status" aria-live="polite">${esc(title)}</div>
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>`;
   bind();
+}
+
+function pageHeading(): string {
+  if (!state.householdName) return 'Know whose turn it is—and why';
+  return ({ today: 'Today’s household chores', people: 'People and availability', chores: 'Recurring chore rules', history: 'Completion history', data: 'Move and back up your data', about: 'About Chore Rulebook' })[view];
+}
+
+function updateMetadata(path: string): void {
+  const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (canonical) canonical.href = `https://chore-rulebook.sociobot.in${path}`;
+  document.querySelectorAll<HTMLMetaElement>('meta[property="og:url"]').forEach((meta) => { meta.content = `https://chore-rulebook.sociobot.in${path}`; });
+}
+
+function demoBanner(): string {
+  return `<aside class="demo-banner" aria-label="Demo mode"><strong>Demo — sample data, nothing is saved to your rulebook</strong><div><button data-action="reset-demo">Reset demo</button><a href="/" data-action="start-real">Start for real</a></div></aside>`;
 }
 
 function navigation(): string {
@@ -93,12 +114,12 @@ function todayView(): string {
 
 function onboarding(): string {
   return `<section class="onboarding">
-    <div class="onboarding-copy"><p class="eyebrow">AN OFFLINE HOUSEHOLD APPLIANCE</p><h2>Know whose turn it is—and why.</h2><p>Write down your people and assignment rules once. Chore Rulebook rotates turns, skips anyone away, explains every choice, and keeps a plain completion history.</p>
-      <ul class="principles"><li><span>01</span> No accounts for household members</li><li><span>02</span> No points, streaks, or surveillance</li><li><span>03</span> Works without a connection</li></ul>
-      <button class="primary" data-action="start">Set up this household</button>
+    <div class="onboarding-copy"><p class="eyebrow">CHORE RULES FOR A SHARED DEVICE</p><h1 tabindex="-1">Know whose turn it is—and why</h1><p>For households sharing recurring chores, it rotates clear assignments and records what was done.</p>
+      <div class="hero-actions"><a class="primary button-link" href="/demo">Try it with sample data</a><button class="secondary" data-action="start">Set up this household</button></div><p class="action-note">The sample opens a ready-made household. Setup starts your private rulebook.</p>
+      <ul class="principles"><li><span aria-hidden="true">01</span> Stored on this device</li><li><span aria-hidden="true">02</span> Works offline after the first visit</li><li><span aria-hidden="true">03</span> Free for six chores</li></ul>
     </div>
     <figure class="hero-art"><picture><source srcset="/assets/house-signal-480.webp 480w, /assets/house-signal.webp 768w" sizes="(max-width: 600px) 100vw, 55vw" type="image/webp"><img src="/assets/house-signal.png" width="768" height="512" alt="A pixel-art cutaway home where glowing routes connect dishes, laundry, plants, and a broom" decoding="async" fetchpriority="high"></picture><figcaption>One home. Visible rules. Shared understanding.</figcaption></figure>
-  </section>`;
+  </section><section class="landing-details" aria-labelledby="how-heading"><p class="eyebrow">HOW IT WORKS</p><h2 id="how-heading">Set rules in three steps</h2><ol><li><strong>Add people.</strong> Keep household order and mark anyone away.</li><li><strong>Write chore rules.</strong> Choose rotation or a fixed owner.</li><li><strong>Record completions.</strong> See the next assignment and its reason.</li></ol><h2>What stays private</h2><p>Names, rules, and history remain in browser storage. The app has no accounts, ads, analytics, or household-data server.</p></section>`;
 }
 
 function assignmentCard({ chore, assignment }: { chore: Chore; assignment: ReturnType<typeof assignmentFor> }): string {
@@ -139,9 +160,9 @@ function historyView(): string {
 function dataView(): string {
   return `<section class="page-lead"><div><p class="eyebrow">YOUR DATA</p><h2>Move, back up, or unlock</h2><p>The rulebook is device-local. Export it whenever you want.</p></div></section>
     <div class="data-grid">
-      <section><span class="section-pixel" aria-hidden="true">↧</span><h3>Backup and restore</h3><p>JSON preserves the whole rulebook. CSV provides a simple completion ledger.</p><div class="button-row"><button class="primary" data-action="export-json">Export JSON</button><button class="secondary" data-action="import-json">Import JSON</button><input class="sr-only" type="file" id="import-file" accept="application/json,.json"></div></section>
+      <section><span class="section-pixel" aria-hidden="true">↧</span><h3>Backup and restore</h3><p>JSON preserves the whole rulebook. CSV provides a simple completion ledger.</p><div class="button-row"><button class="primary" data-action="export-json">Export JSON</button><button class="secondary" data-action="import-json">Import JSON</button><label class="sr-only" for="import-file">Choose a Chore Rulebook JSON backup</label><input class="sr-only" type="file" id="import-file" accept="application/json,.json"></div></section>
       <section><span class="section-pixel" aria-hidden="true">⌁</span><h3>Pair another device</h3><p>Create a printable QR containing this snapshot. Data travels in the QR—not through a server.</p><button class="secondary" data-action="pair">Create pairing sheet</button></section>
-      <section class="plus-card"><span class="section-pixel" aria-hidden="true">+</span><p class="eyebrow">HOUSEHOLD PLUS</p><h3>${unlocked ? 'Plus is unlocked' : '$12 one-time purchase'}</h3><p>${unlocked ? 'Unlimited chores and printable device pairing are active on this device.' : 'Free includes up to 6 chores, all core rules, history, and exports. Plus adds unlimited chores and printable QR pairing.'}</p>${unlocked ? '<p class="success-text">✓ License active</p>' : `<a class="primary button-link" href="${checkoutUrl}">Buy Household Plus</a><button class="link-button restore" data-action="restore-license">Have a license? Restore it</button>`}<p class="fine-print">Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license.</p></section>
+      <section class="plus-card"><span class="section-pixel" aria-hidden="true">+</span><p class="eyebrow">HOUSEHOLD PLUS</p><h3>${unlocked ? 'Plus is active' : 'Restore an existing license'}</h3><p>${unlocked ? 'Unlimited chores and printable device pairing are active on this device.' : 'Free includes up to 6 chores, all core rules, history, and exports. New Plus purchases are not available.'}</p>${unlocked ? '<p class="success-text">✓ License active</p>' : '<button class="link-button restore" data-action="restore-license">Have a license? Restore it</button>'}<p class="fine-print">Existing license checks use the Sociobot billing API. No household data is sent.</p></section>
     </div>`;
 }
 
@@ -150,8 +171,8 @@ function aboutView(): string {
 }
 
 function legalPage(path: string): string {
-  if (path === '/privacy') return `<article class="prose legal"><p class="eyebrow">PLAIN-LANGUAGE POLICY · 28 AUG 2026</p><h2>Your household stays on your device</h2><p>Chore Rulebook stores names, chore rules, completion notes, and settings in your browser’s IndexedDB. We do not receive this data and the app contains no analytics or tracking.</p><h3>Exports and pairing</h3><p>When you export or make a pairing QR, your browser creates the file or QR locally. Anyone with that file or QR can read the included household data, so share it deliberately.</p><h3>Licenses</h3><p>If you buy or verify Household Plus, the license token is stored in localStorage and sent to the Sociobot billing API for verification. Purchase processing is handled by Sociobot/Dodo as merchant of record. The chore data itself is never sent with that request.</p><h3>Removing data</h3><p>Use your browser’s site-data controls to erase this device’s rulebook and license. Export a backup first if you want to keep it.</p><a href="/" data-route="home">← Return to the rulebook</a></article>`;
-  return `<article class="prose legal"><p class="eyebrow">TERMS · 28 AUG 2026</p><h2>A practical household utility</h2><p>Chore Rulebook is provided “as is” for household coordination. You are responsible for your rules, backups, and who can access the shared device or pairing QR.</p><h3>Purchase</h3><p>Household Plus costs $12 as a one-time purchase and unlocks unlimited chores and printable device pairing for the licensed household. Core accessibility, JSON/CSV export, six chores, assignment explanations, and history remain free. Sociobot/Dodo is the merchant of record and handles payment and refunds; refunded or revoked licenses stop unlocking paid features.</p><h3>Acceptable use</h3><p>Do not use the app for covert monitoring, behavioral scoring, or profiling children. The product intentionally does not provide those features.</p><h3>Liability</h3><p>To the extent permitted by law, the authors are not liable for lost local data or household disputes. Keep backups that suit your needs.</p><a href="/" data-route="home">← Return to the rulebook</a></article>`;
+  if (path === '/privacy') return `<article class="prose legal"><p class="eyebrow">PLAIN-LANGUAGE POLICY · 29 AUG 2026</p><h2>Your household stays on your device</h2><p>Chore Rulebook stores names, chore rules, completion notes, and settings in your browser’s IndexedDB. We do not receive this data. The app has no analytics or tracking.</p><h3>Exports and pairing</h3><p>Your browser creates exports and pairing QR codes locally. Anyone with that file or QR can read its household data.</p><h3>Licenses</h3><p>Existing Plus license tokens are stored in localStorage. The token alone is sent to the Sociobot billing API for verification.</p><h3>Removing data</h3><p>Use your browser’s site-data controls to erase this rulebook and license. Export a backup first if you need it.</p><a href="/" data-route="home">← Return to the rulebook</a></article>`;
+  return `<article class="prose legal"><p class="eyebrow">TERMS · 29 AUG 2026</p><h2>A practical household utility</h2><p>Chore Rulebook is provided “as is” for household coordination. You are responsible for your rules, backups, and shared-device access.</p><h3>Existing licenses</h3><p>The free rulebook includes six chores, assignment explanations, history, and exports. Existing Plus licenses add unlimited chores and printable pairing. New purchases are not available.</p><h3>Acceptable use</h3><p>Do not use the app for covert monitoring, behavioral scoring, or profiling children. The product does not provide those features.</p><h3>Liability</h3><p>The authors are not liable for lost local data or household disputes where law allows. Keep backups that suit your needs.</p><a href="/" data-route="home">← Return to the rulebook</a></article>`;
 }
 
 function emptyPanel(title: string, text: string, action: string, label: string, isView = false): string {
@@ -163,12 +184,12 @@ function initials(name: string): string { return name.trim().split(/\s+/).slice(
 function bind(): void {
   document.querySelectorAll<HTMLElement>('[data-view]').forEach((button) => button.addEventListener('click', () => {
     view = button.dataset.view as View;
-    history.pushState({}, '', `/?view=${view}`);
+    history.pushState({}, '', `${isDemoMode() ? '/demo' : '/'}?view=${view}`);
     shell();
-    document.querySelector<HTMLElement>('#main')?.focus();
+    document.querySelector<HTMLElement>('h1')?.focus();
   }));
-  document.querySelectorAll<HTMLAnchorElement>('[data-route="legal"]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); history.pushState({}, '', link.pathname); shell(); document.querySelector<HTMLElement>('#main')?.focus(); }));
-  document.querySelectorAll<HTMLAnchorElement>('[data-route="home"]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); history.pushState({}, '', '/'); view = 'today'; shell(); document.querySelector<HTMLElement>('#main')?.focus(); }));
+  document.querySelectorAll<HTMLAnchorElement>('[data-route="legal"]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); history.pushState({}, '', link.pathname); shell(); document.querySelector<HTMLElement>('h1')?.focus(); }));
+  document.querySelectorAll<HTMLAnchorElement>('[data-route="home"]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); history.pushState({}, '', isDemoMode() ? '/demo' : '/'); view = 'today'; shell(); document.querySelector<HTMLElement>('h1')?.focus(); }));
   document.querySelectorAll<HTMLElement>('[data-action]').forEach((element) => element.addEventListener('click', handleAction));
   document.querySelector<HTMLInputElement>('#import-file')?.addEventListener('change', importFile);
   const modal = document.querySelector<HTMLDialogElement>('#modal');
@@ -192,6 +213,8 @@ async function handleAction(event: Event): Promise<void> {
   if (action === 'import-json') { document.querySelector<HTMLInputElement>('#import-file')?.click(); return; }
   if (action === 'pair') return pairingModal();
   if (action === 'restore-license') return licenseModal();
+  if (action === 'reset-demo') { await resetDemoState(); location.reload(); return; }
+  if (action === 'start-real') { event.preventDefault(); await resetDemoState(); location.assign('/'); return; }
 }
 
 function openModal(content: string, onSubmit?: (form: HTMLFormElement) => Promise<void> | void): void {
@@ -221,7 +244,9 @@ function householdModal(): void {
     const data = new FormData(form); const now = new Date().toISOString();
     const names = String(data.get('people')).split(',').map((name) => name.trim()).filter(Boolean);
     if (!names.length) throw new Error('Add at least one person.');
-    state.householdName = String(data.get('household')).trim();
+    const householdName = String(data.get('household')).trim();
+    if (!householdName) throw new Error('Enter a household name using letters or numbers.');
+    state.householdName = householdName;
     state.people = names.map((name) => ({ id: uid(), name, available: true, createdAt: now }));
     await persist('Household created.');
   });
@@ -230,6 +255,7 @@ function householdModal(): void {
 function personModal(): void {
   openModal(modalFrame('Add a person', `<label>Name<input name="name" required maxlength="60" autocomplete="off"></label><label class="check-row"><input type="checkbox" name="available" checked><span>Available for rotating chores</span></label>`, 'Add person'), async (form) => {
     const data = new FormData(form); const name = String(data.get('name')).trim();
+    if (!name) throw new Error('Enter a person’s name using letters or numbers.');
     if (state.people.some((person) => person.name.toLocaleLowerCase() === name.toLocaleLowerCase())) throw new Error('That name is already in the household.');
     state.people.push({ id: uid(), name, available: data.has('available'), createdAt: new Date().toISOString() });
     await persist(`${name} added.`);
@@ -245,7 +271,9 @@ function choreModal(id?: string): void {
   openModal(modalFrame(chore ? 'Edit chore rule' : 'Add a chore rule', body, chore ? 'Save rule' : 'Add chore', danger), async (form) => {
     const data = new FormData(form); const rule = String(data.get('rule')) as Chore['rule']; const owner = String(data.get('owner'));
     if (rule === 'fixed' && !owner) throw new Error('Choose an owner for this fixed rule.');
-    const values: Chore = { id: chore?.id ?? uid(), name: String(data.get('name')).trim(), intervalDays: Number(data.get('interval')), effortMinutes: Number(data.get('effort')), rule, fixedPersonId: rule === 'fixed' ? owner : undefined, missedPolicy: String(data.get('missed')) as Chore['missedPolicy'], createdAt: chore?.createdAt ?? new Date().toISOString() };
+    const name = String(data.get('name')).trim();
+    if (!name) throw new Error('Enter a chore name using letters or numbers.');
+    const values: Chore = { id: chore?.id ?? uid(), name, intervalDays: Number(data.get('interval')), effortMinutes: Number(data.get('effort')), rule, fixedPersonId: rule === 'fixed' ? owner : undefined, missedPolicy: String(data.get('missed')) as Chore['missedPolicy'], createdAt: chore?.createdAt ?? new Date().toISOString() };
     if (chore) Object.assign(chore, values); else state.chores.push(values);
     await persist(chore ? 'Rule updated.' : 'Chore added.');
   });
@@ -312,12 +340,9 @@ async function importFile(event: Event): Promise<void> {
   input.value = '';
 }
 
-function encodePairing(): string { const bytes = new TextEncoder().encode(JSON.stringify(state)); let binary = ''; for (const byte of bytes) binary += String.fromCharCode(byte); return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', ''); }
-function decodePairing(value: string): HouseholdState { const base64 = value.replaceAll('-', '+').replaceAll('_', '/'); const binary = atob(base64); const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0)); return validateImport(JSON.parse(new TextDecoder().decode(bytes))); }
-
 async function pairingModal(): Promise<void> {
   if (!unlocked) { view = 'data'; shell(); toast('Printable pairing is included with Household Plus. JSON export always stays free.'); return; }
-  const link = `${location.origin}/#pair=${encodePairing()}`;
+  const link = `${location.origin}/#pair=${await encodePairing(state)}`;
   openModal(`<div class="modal-head"><div><p class="eyebrow">LOCAL TRANSFER</p><h2 id="modal-title">Pair another device</h2></div><button class="close-button" data-close aria-label="Close dialog">×</button></div><div class="pair-sheet"><canvas id="pair-code" width="300" height="300" aria-label="QR code containing this rulebook snapshot"></canvas><div><h3>${esc(state.householdName)}</h3><p>Open Chore Rulebook on the other device and scan this code. The snapshot is inside the QR; no household data is uploaded.</p><p class="pair-warning">Anyone with this sheet can read the household names and rules.</p><button class="primary" id="print-pair">Print pairing sheet</button></div></div>`);
   try { const QRCode = await import('qrcode'); await QRCode.toCanvas(document.querySelector<HTMLCanvasElement>('#pair-code')!, link, { width: 300, margin: 2, color: { dark: '#0A101C', light: '#F4F1DF' }, errorCorrectionLevel: 'L' }); }
   catch { toast('The pairing code could not be drawn. Export JSON instead.'); }
@@ -335,7 +360,7 @@ function licenseModal(): void {
 async function importPairFromHash(): Promise<void> {
   if (!location.hash.startsWith('#pair=')) return;
   try {
-    const incoming = decodePairing(location.hash.slice(6)); history.replaceState({}, '', '/');
+    const incoming = await decodePairing(location.hash.slice(6)); history.replaceState({}, '', '/');
     if (confirm(`Import the paired rulebook “${incoming.householdName || 'Unnamed household'}” on this device? This replaces any current local data.`)) { state = incoming; await saveState(state); toast('Paired rulebook imported.'); }
   } catch { history.replaceState({}, '', '/'); toast('That pairing code is invalid or incomplete.'); }
 }
@@ -343,13 +368,21 @@ async function importPairFromHash(): Promise<void> {
 async function start(): Promise<void> {
   try { state = await loadState(); }
   catch { state = emptyState(); app.innerHTML = `<main id="main"><h1>Chore Rulebook</h1><section class="fatal"><h2>Local storage is unavailable</h2><p>This app needs browser storage to protect your rulebook between visits. Leave private browsing or allow site storage, then reload.</p><button onclick="location.reload()">Try again</button></section></main>`; return; }
-  const requested = new URL(location.href).searchParams.get('view') as View | null; if (requested) view = requested;
+  if (isDemoMode()) await saveState(state);
+  view = viewFromLocation();
   const hadLicense = captureLicense(); if (hadLicense) toast('License received. Checking it now.');
-  shell(); await importPairFromHash();
+  shell();
+  if (consumedRecoveryNotice()) toast('Invalid saved data was set aside. Start a new rulebook or import a valid backup.');
+  await importPairFromHash();
   if (storedLicense()) verifyLicense().then((valid) => { const changed = valid !== unlocked; unlocked = valid; if (changed) { shell(); toast(valid ? 'Household Plus is active.' : 'License no longer active. Free features and your data are unchanged.'); } }).catch(() => { /* cached access remains during network errors */ });
 }
 
-window.addEventListener('popstate', () => shell());
+function viewFromLocation(): View {
+  const requested = new URL(location.href).searchParams.get('view');
+  return ['today', 'people', 'chores', 'history', 'data', 'about'].includes(requested ?? '') ? requested as View : 'today';
+}
+
+window.addEventListener('popstate', () => { view = viewFromLocation(); shell(); document.querySelector<HTMLElement>('h1')?.focus(); });
 window.addEventListener('online', () => { shell(); toast('Back online. Your local rulebook is unchanged.'); });
 window.addEventListener('offline', () => { shell(); toast('Offline. Changes will keep saving on this device.'); });
 

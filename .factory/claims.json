@@ -1,0 +1,58 @@
+[
+  {
+    "id": "offline-reload",
+    "claim": "Works offline after the first visit",
+    "where": "landing facts, README",
+    "test": "npm run test:claims -- --grep @claim:offline-reload",
+    "sandbox": "fresh browser context at /demo; wait for service worker; clear HTTP cache; go offline; reload"
+  },
+  {
+    "id": "device-local",
+    "claim": "Household data stays on this device during the free workflow",
+    "where": "landing, footer, Data, Privacy, README",
+    "test": "npm run test:claims -- --grep @claim:device-local",
+    "sandbox": "fresh /demo context; record every request while navigating and changing availability; assert same-origin only"
+  },
+  {
+    "id": "json-export",
+    "claim": "Exports the complete rulebook as JSON",
+    "where": "Data, README",
+    "test": "npm run test:claims -- --grep @claim:json-export",
+    "sandbox": "fresh /demo context; download JSON; assert sample household, people, chores, and completions"
+  },
+  {
+    "id": "csv-export",
+    "claim": "Exports completion history as CSV",
+    "where": "History, Data, README",
+    "test": "npm run test:claims -- --grep @claim:csv-export",
+    "sandbox": "fresh /demo context; download CSV; assert header and one row per sample completion"
+  },
+  {
+    "id": "explain-assignment",
+    "claim": "Explains each chore assignment and skips people marked away",
+    "where": "landing, Today, README",
+    "test": "npm run test:claims -- --grep @claim:explain-assignment",
+    "sandbox": "fresh /demo context with Casey away; open an assignment explanation and assert household order and away-person handling"
+  },
+  {
+    "id": "six-chore-tier",
+    "claim": "The free rulebook supports up to six chores",
+    "where": "landing, Data, README",
+    "test": "npm run test:claims -- --grep @claim:six-chore-tier",
+    "sandbox": "fresh /demo context with four chores; add two; assert the seventh attempt is stopped with the stated limit"
+  },
+  {
+    "id": "qr-pairing",
+    "claim": "An existing Plus license creates a printable QR containing a local snapshot",
+    "where": "Data, Privacy, README",
+    "test": "npm run test:claims -- --grep @claim:qr-pairing",
+    "sandbox": "fresh /demo context; cached valid license; six chores and 40 completions; assert a non-blank QR without an external request"
+  },
+  {
+    "id": "demo-isolation",
+    "claim": "Demo changes use separate storage and can be reset without changing the real rulebook",
+    "where": "Demo banner, README",
+    "test": "npm run test:claims -- --grep @claim:demo-isolation",
+    "sandbox": "fresh context; create real household; enter and reset /demo; return to real mode and assert original household remains"
+  }
+]

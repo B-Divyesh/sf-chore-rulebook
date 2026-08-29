@@ -1,7 +1,8 @@
-const VERSION = 'rulebook-v1.0.2';
+const VERSION = 'rulebook-v1.0.3';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
-const shellFiles = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png', '/assets/house-signal-480.webp', '/assets/house-signal.webp', '/assets/house-signal.png'];
+const buildAssets = [/*__BUILD_ASSETS__*/];
+const shellFiles = ['/', '/index.html', '/demo', '/privacy', '/terms', '/offline.html', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png', '/icons/apple-touch-icon.png', '/assets/house-signal-480.webp', '/assets/house-signal.webp', '/assets/house-signal.png', '/assets/chore-rulebook-social.jpg', ...buildAssets];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(SHELL).then((cache) => cache.addAll(shellFiles)).then(() => self.skipWaiting()));
@@ -23,12 +24,16 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).then((response) => {
-      const copy = response.clone(); caches.open(SHELL).then((cache) => cache.put('/index.html', copy)); return response;
-    }).catch(async () => (await caches.match('/index.html')) || (await caches.match('/offline.html'))));
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(SHELL).then((cache) => cache.put('/index.html', copy));
+      }
+      return response;
+    }).catch(async () => (await caches.match('/index.html', { ignoreVary: true })) || (await caches.match('/offline.html', { ignoreVary: true }))));
     return;
   }
 
-  event.respondWith(caches.match(request).then((cached) => cached || fetch(request).then(async (response) => {
+  event.respondWith(caches.match(request, { ignoreSearch: true, ignoreVary: true }).then((cached) => cached || fetch(request).then(async (response) => {
     if (response.ok) await caches.open(ASSETS).then((cache) => cache.put(request, response.clone()));
     return response;
   })));

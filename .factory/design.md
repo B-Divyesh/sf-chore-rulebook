@@ -85,3 +85,8 @@ Generated with the factory Azure image deployment (`factory-image`) on
 stored at `assets/src/house-signal.json`. The output is original generated
 imagery for this product and is disclosed in the footer. Source PNG is retained
 under `assets/src/`; optimized WebP ships in `public/assets/`.
+
+The 1200×630 social preview in `public/assets/chore-rulebook-social.jpg` is a
+cropped composition of that same original source image. The Apple touch icon is
+a 180px derivative of the hand-authored product icon. No new third-party asset
+was introduced during the 1.0.3 repair.
