@@ -98,3 +98,11 @@ Static deployment uses `./dist` and the factory work-order command:
 ## Known gaps and next steps
 
 None. No review finding or additional cold-live finding remains unresolved.
+
+## Independent verification 5 — 2026-08-29 UTC
+
+**PASS — candidate `30952242d10933a0b8be121fff85968b90269899` is verified at <https://chore-rulebook.sociobot.in>.**
+
+See [`verification-5.md`](verification-5.md) for fresh evidence. From a clean install the verifier ran every one of the 16 required claims commands separately, the combined claims suite, and `npm run check`; all passed (15 unit/release tests, typecheck, production build, and 64 end-to-end tests). Fresh live checks covered first-read/demo, normal and invalid/boundary flows, keyboard focus, 390 px mobile, axe, privacy request logging, response headers/caching, offline reload, service-worker update, rate limiting, and artifact hashes. The deployed artifacts are byte-identical to the rebuilt candidate. No product defects were found.
+
+Fresh Lighthouse scoring was unavailable because its CLI could not attach to the supplied headless Chromium; static budgets and all browser quality checks passed. This is a verification-environment limitation, not a product gap.
