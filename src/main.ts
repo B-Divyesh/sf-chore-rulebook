@@ -13,7 +13,7 @@ let view: View = 'today';
 let unlocked = cachedUnlock();
 let returnFocus: HTMLElement | null = null;
 let undoTimer = 0;
-const BUILD_ID = '1.0.6';
+const BUILD_ID = '1.0.7';
 
 const uid = () => crypto.randomUUID();
 const esc = (value: string | number | undefined) => String(value ?? '')
@@ -38,11 +38,12 @@ function shell(): void {
   const legal = location.pathname === '/privacy' || location.pathname === '/terms';
   const landing = !legal && !state.householdName;
   const title = legal ? (location.pathname === '/privacy' ? 'Privacy' : 'Terms') : pageHeading();
-  document.title = legal ? `${title} — Chore Rulebook` : isDemoMode() ? 'Demo — Chore Rulebook' : 'Chore Rulebook — clear household rotations';
-  updateMetadata(legal ? location.pathname : isDemoMode() ? '/demo' : '/');
+  document.title = documentTitle(title, legal, landing);
+  updateMetadata(canonicalPath(legal));
   app.innerHTML = `
     <header class="site-header">
       <a class="brand" href="${isDemoMode() ? '/demo' : '/'}" data-route="home" aria-label="Chore Rulebook home"><span class="brand-mark" aria-hidden="true">⌂</span><span>CHORE<br>RULEBOOK</span></a>
+      ${siteNavigation()}
       <div class="signal"><span class="signal-dot"></span><span>${navigator.onLine ? 'DEVICE READY' : 'OFFLINE · SAVED HERE'}</span></div>
     </header>
     ${isDemoMode() && !legal ? demoBanner() : ''}
@@ -62,6 +63,20 @@ function shell(): void {
   bind();
 }
 
+function documentTitle(title: string, legal: boolean, landing: boolean): string {
+  if (legal) return `${title} — Chore Rulebook`;
+  if (landing) return 'Chore Rulebook — clear household rotations';
+  if (isDemoMode() && view === 'today') return 'Demo — Chore Rulebook';
+  return `${title} — Chore Rulebook`;
+}
+
+function canonicalPath(legal: boolean): string {
+  if (legal) return location.pathname;
+  if (!state.householdName) return '/';
+  const path = isDemoMode() ? '/demo' : '/';
+  return view === 'today' ? path : `${path}?view=${view}`;
+}
+
 function pageHeading(): string {
   if (!state.householdName) return 'Know whose turn it is—and why';
   return ({ today: 'Today’s household chores', people: 'People and availability', chores: 'Recurring chore rules', history: 'Completion history', data: 'Move and back up your data', about: 'About Chore Rulebook' })[view];
@@ -75,6 +90,10 @@ function updateMetadata(path: string): void {
 
 function demoBanner(): string {
   return `<aside class="demo-banner" aria-label="Demo mode"><strong>Demo — sample data, nothing is saved to your rulebook</strong><div><button data-action="reset-demo">Reset demo</button><a href="/" data-action="start-real">Start for real</a></div></aside>`;
+}
+
+function siteNavigation(): string {
+  return `<nav class="site-nav" aria-label="Site"><a href="/demo">Demo</a><a href="/privacy" data-route="legal">Privacy</a><a href="/terms" data-route="legal">Terms</a></nav>`;
 }
 
 function navigation(): string {
@@ -162,7 +181,7 @@ function dataView(): string {
     <div class="data-grid">
       <section><span class="section-pixel" aria-hidden="true">↧</span><h3>Backup and restore</h3><p>JSON preserves the whole rulebook. CSV provides a simple completion ledger.</p><div class="button-row"><button class="primary" data-action="export-json">Export JSON</button><button class="secondary" data-action="import-json" aria-controls="import-file">Import JSON</button><label class="sr-only" for="import-file">Choose a Chore Rulebook JSON backup</label><input class="sr-only" type="file" id="import-file" accept="application/json,.json"></div></section>
       <section><span class="section-pixel" aria-hidden="true">⌁</span><h3>Pair another device</h3><p>Create a printable QR containing this snapshot. Data travels in the QR—not through a server.</p><button class="secondary" data-action="pair">Create pairing sheet</button></section>
-      <section class="plus-card"><span class="section-pixel" aria-hidden="true">+</span><p class="eyebrow">HOUSEHOLD PLUS</p><h3>${unlocked ? 'Plus is active' : '$12 one-time purchase'}</h3><p>${unlocked ? 'Unlimited chores and printable device pairing are active on this device.' : 'Free includes up to 6 chores, all core rules, history, and exports. Plus adds unlimited chores and printable QR pairing.'}</p>${unlocked ? '<p class="success-text">✓ License active</p>' : `<a class="primary button-link" href="${checkoutUrl}">Buy Household Plus</a><button class="link-button restore" data-action="restore-license">Have a license? Restore it</button>`}<p class="fine-print">Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license.</p></section>
+      <section class="plus-card"><span class="section-pixel" aria-hidden="true">+</span><p class="eyebrow">HOUSEHOLD PLUS</p><h3>${unlocked ? 'Plus is active' : '$12 one-time purchase'}</h3><p>${unlocked ? 'Unlimited chores and printable device pairing are active on this device.' : 'Free includes up to 6 chores, all core rules, history, and exports. Plus adds unlimited chores and printable QR pairing.'}</p>${unlocked ? '<p class="success-text">✓ License active</p>' : `<a class="primary button-link" href="${checkoutUrl}">Buy Household Plus</a><button class="link-button restore" data-action="restore-license">Have a license? Restore it</button>`}<p class="fine-print">Checkout opens through Dodo. A revoked license returns Plus features to free limits.</p></section>
     </div>`;
 }
 
@@ -172,7 +191,7 @@ function aboutView(): string {
 
 function legalPage(path: string): string {
   if (path === '/privacy') return `<article class="prose legal"><p class="eyebrow">PLAIN-LANGUAGE POLICY · 29 AUG 2026</p><h2>Your household stays on your device</h2><p>Chore Rulebook stores names, chore rules, completion notes, and settings in your browser’s IndexedDB. We do not receive this data. The app has no analytics or tracking.</p><h3>Exports and pairing</h3><p>Your browser creates exports and pairing QR codes locally. Anyone with that file or QR can read its household data.</p><h3>Licenses</h3><p>Existing Plus license tokens are stored in localStorage. The token alone is sent to the Sociobot billing API for verification.</p><h3>Removing data</h3><p>Use your browser’s site-data controls to erase this rulebook and license. Export a backup first if you need it.</p><a href="/" data-route="home">← Return to the rulebook</a></article>`;
-  return `<article class="prose legal"><p class="eyebrow">TERMS · 29 AUG 2026</p><h2>A practical household utility</h2><p>Chore Rulebook is provided “as is” for household coordination. You are responsible for your rules, backups, and shared-device access.</p><h3>Purchase</h3><p>Household Plus costs $12 once and adds unlimited chores and printable pairing. Core accessibility, exports, six chores, explanations, and history remain free.</p><p>Sociobot/Dodo is the merchant of record and handles payment and refunds. Refunded or revoked licenses stop unlocking paid features.</p><h3>Acceptable use</h3><p>Do not use the app for covert monitoring, behavioral scoring, or profiling children. The product does not provide those features.</p><h3>Liability</h3><p>The authors are not liable for lost local data or household disputes where law allows. Keep backups that suit your needs.</p><a href="/" data-route="home">← Return to the rulebook</a></article>`;
+  return `<article class="prose legal"><p class="eyebrow">TERMS · 29 AUG 2026</p><h2>A practical household utility</h2><p>Chore Rulebook is provided “as is” for household coordination. You are responsible for your rules, backups, and shared-device access.</p><h3>Purchase</h3><p>Household Plus costs $12 once and adds unlimited chores and printable pairing. Core accessibility, exports, six chores, explanations, and history remain free.</p><p>Checkout opens through Dodo. A revoked license returns Plus features to free limits.</p><h3>Acceptable use</h3><p>Do not use the app for covert monitoring, behavioral scoring, or profiling children. The product does not provide those features.</p><h3>Liability</h3><p>The authors are not liable for lost local data or household disputes where law allows. Keep backups that suit your needs.</p><a href="/" data-route="home">← Return to the rulebook</a></article>`;
 }
 
 function emptyPanel(title: string, text: string, action: string, label: string, isView = false): string {

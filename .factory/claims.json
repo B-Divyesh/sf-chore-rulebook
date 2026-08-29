@@ -99,7 +99,7 @@
   },
   {
     "id": "plus-purchase",
-    "claim": "Household Plus costs $12 once and opens the registered Sociobot checkout",
+    "claim": "Household Plus costs $12 once and opens a Dodo checkout through Sociobot",
     "where": "Data, Terms, README",
     "test": "npm run test:claims -- --grep @claim:plus-purchase",
     "sandbox": "fresh /demo context; assert the price and checkout URL; request the gateway without following redirects and require a Dodo checkout redirect"

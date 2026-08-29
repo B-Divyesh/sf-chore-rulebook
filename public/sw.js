@@ -1,4 +1,4 @@
-const VERSION = 'rulebook-v1.0.6';
+const VERSION = 'rulebook-v1.0.7';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 const buildAssets = [/*__BUILD_ASSETS__*/];

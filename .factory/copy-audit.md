@@ -48,3 +48,22 @@ Audited 2026-08-29 after review 1. Counts treat hyphenated terms as one word. No
 | --- | ---: | --- |
 | The app works offline after the first visit. | 8 | Pass; `offline-reload` covers it. |
 | Open the printed local URL. | 5 | Pass; the unlisted setup claim was removed. |
+| Checkout opens through Dodo. | 4 | Pass; `plus-purchase` verifies the gateway redirect. |
+| If a license is revoked, paid features return to free limits. | 11 | Pass; `license-revocation` covers it. |
+
+## Review 2 billing copy
+
+The untested merchant-of-record and refund-handling promise was removed from the
+README, Data view, and Terms. The replacement checkout sentence is covered by
+`plus-purchase`; the revocation sentence is covered by `license-revocation`.
+
+| Copy | Words | Result |
+| --- | ---: | --- |
+| Checkout opens through Dodo. | 4 | Pass; `plus-purchase` follows the checkout redirect. |
+| A revoked license returns Plus features to free limits. | 10 | Pass; `license-revocation` asserts the seventh chore is stopped. |
+
+## Catalog description
+
+| Copy | Characters | Result |
+| --- | ---: | --- |
+| Rotate shared household chores, explain each assignment, and keep a local completion history. | 92 | Pass; verb-first and under 120 characters. |

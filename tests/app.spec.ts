@@ -82,6 +82,16 @@ test('opens and closes the setup dialog from the keyboard with focus restored', 
   await expect(trigger).toBeFocused();
 });
 
+test('site header keeps Demo, Privacy, and Terms links on every application route', async ({ page }) => {
+  for (const path of ['/', '/demo', '/privacy', '/terms']) {
+    await page.goto(path);
+    const header = page.getByRole('navigation', { name: 'Site' });
+    await expect(header.getByRole('link', { name: 'Demo' })).toHaveAttribute('href', '/demo');
+    await expect(header.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+    await expect(header.getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms');
+  }
+});
+
 test('legal pages render directly with one main heading', async ({ page }) => {
   const routes = [
     { path: '/privacy', title: 'Privacy — Chore Rulebook', heading: 'Privacy' },
@@ -94,8 +104,8 @@ test('legal pages render directly with one main heading', async ({ page }) => {
     await expect(page.locator('h1')).toHaveText(heading);
     await expect(page).toHaveTitle(title);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://chore-rulebook.sociobot.in${path}`);
-    await expect(page.getByRole('link', { name: 'Privacy' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Privacy' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Terms' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   }
 });
@@ -105,14 +115,30 @@ test('demo has route-specific metadata and navigation moves focus', async ({ pag
   await expect(page).toHaveTitle('Demo — Chore Rulebook');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://chore-rulebook.sociobot.in/demo');
   await page.getByRole('button', { name: 'People' }).click();
+  await expect(page).toHaveTitle('People and availability — Chore Rulebook');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://chore-rulebook.sociobot.in/demo?view=people');
   await expect(page.locator('h1')).toBeFocused();
-  await page.getByRole('link', { name: 'Privacy' }).click();
+  await page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Privacy' }).click();
   await expect(page).toHaveURL('/privacy');
   await expect(page.locator('h1')).toHaveText('Privacy');
   await expect(page.locator('h1')).toBeFocused();
   await page.goBack();
   await expect(page.locator('h1')).toHaveText('People and availability');
   await expect(page.locator('h1')).toBeFocused();
+});
+
+test('every deep-linkable app view sets a matching document title', async ({ page }) => {
+  const views = [
+    ['people', 'People and availability'],
+    ['chores', 'Recurring chore rules'],
+    ['history', 'Completion history'],
+    ['data', 'Move and back up your data'],
+  ];
+  for (const [view, heading] of views) {
+    await page.goto(`/demo?view=${view}`);
+    await expect(page).toHaveTitle(`${heading} — Chore Rulebook`);
+    await expect(page.locator('h1')).toHaveText(heading);
+  }
 });
 
 test('designed 404 has metadata, legal links, mobile fit, and no serious accessibility violations', async ({ page }) => {
@@ -123,8 +149,8 @@ test('designed 404 has metadata, legal links, mobile fit, and no serious accessi
   await expect(page.locator('main')).toBeVisible();
   await expect(page.locator('header')).toBeVisible();
   await expect(page.locator('footer')).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
-  await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms');
+  await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+  await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /requested Chore Rulebook page/);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://chore-rulebook.sociobot.in/404');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
@@ -215,9 +241,10 @@ test('desktop and mobile views stay within the viewport with 44px controls', asy
   const choresWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(choresWidth).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
   await page.getByRole('button', { name: 'Today' }).click();
-  for (const locator of [page.locator('.brand'), page.locator('summary').first(), page.getByRole('link', { name: 'Privacy' })]) {
+  for (const locator of [page.locator('.brand'), page.locator('summary').first(), page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Privacy' })]) {
     const box = await locator.boundingBox();
     expect(box?.height).toBeGreaterThanOrEqual(44);
+    expect(box?.width).toBeGreaterThanOrEqual(44);
   }
 });
 

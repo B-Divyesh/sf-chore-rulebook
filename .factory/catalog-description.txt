@@ -1,1 +1,1 @@
-Rotate household chores, explain each assignment, and keep completion history on one shared device.
+Rotate shared household chores, explain each assignment, and keep a local completion history.

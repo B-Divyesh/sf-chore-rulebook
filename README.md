@@ -55,8 +55,8 @@ fonts, or runtime CDNs.
 
 The free rulebook supports six chores with rules, history, and exports.
 Household Plus costs $12 once and adds unlimited chores and printable QR
-pairing. Sociobot/Dodo handles checkout and refunds as merchant of record. If a
-refund revokes a license, paid features return to free limits.
+pairing. Checkout opens through Dodo. If a license is revoked, paid features
+return to free limits.
 
 ## Project notes
 
