@@ -20,6 +20,7 @@ test('first screen has one job heading, both first actions, and three visible fa
   await expect(page.locator('.principles li')).toHaveCount(3);
   const facts = await page.locator('.principles').boundingBox();
   expect((facts?.y ?? 0) + (facts?.height ?? 0)).toBeLessThanOrEqual(await page.evaluate(() => innerHeight));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
   await expect(page.locator('figcaption')).toHaveText('The sample shows chores, assignments, and household rules on one shared device.');
   await expect(page.locator('footer')).toContainText('Your household data stays on this device.');
   await expect(page.locator('footer')).not.toContainText('Private by default.');

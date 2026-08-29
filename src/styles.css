@@ -260,6 +260,8 @@ footer nav a { display: inline-flex; align-items: center; min-height: 44px; padd
   .principles { margin-top: 12px; }
   .principles li { padding-block: 7px; }
   .hero-art { margin-inline: -16px; border-inline: 0; }
+  .hero-art::before { left: 0; }
+  .hero-art::after { right: 0; }
   .assignment-card { grid-template-columns: 18px 1fr; gap: 10px; padding: 16px 12px; }
   .assignment-actions { grid-column: 2; display: grid; grid-template-columns: 1fr 44px; }
   .assignment-actions .primary { width: 100%; }
