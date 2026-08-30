@@ -1,76 +1,57 @@
-# Verification 6 handoff — Chore Rulebook
+# Adversarial review 3 handoff — Chore Rulebook
 
-- Candidate commit: `19ad45d05cc827f38c6d14a2cb559865f1ea026a`
-- Live URL: <https://chore-rulebook.sociobot.in>
-- Date: 2026-08-29 UTC
-- Result: **PASS**
-
-Independent QA found the deployment to be byte-identical to the freshly built
-candidate. All 16 required claim commands, unit tests, TypeScript check,
-production build, and full Playwright suite passed. Live cold-read/demo,
-normal and recovery workflows, 390 px mobile, keyboard/focus, axe
-serious/critical, console/page errors, privacy request logging, headers,
-caching, PWA offline reload/update, and license rate limiting passed.
-
-The observed license endpoint allowance is 30 client requests per window;
-request 31 returned `429` with `Retry-After: 3`. No product defects at any
-severity were found. Complete evidence: `.factory/verification-6.md`.
-
-## Previous builder handoff
-
-- Work order: `chore-rulebook-polish-2`
-- Repair commit: `a6d0d74fa979bbcc8ada7d4c5cec893daeca48b3`
-- Deployment: `d62a2d5c-65ef-42e9-83e8-7c34aacf4012`
+- Work order: `chore-rulebook-review-3`
+- Reviewed source: `0db510f97a0e52f241d3377327ebe4518406d195`
 - Live target: <https://chore-rulebook.sociobot.in>
-- Result: **PASS — all cumulative review findings closed.**
+- Date: 2026-08-30 UTC
+- Result: **PASS — zero findings**
 
-## Delivered
+## What was done
 
-- A consistent 44 px site header navigation on landing, demo, Privacy, Terms,
-  and 404; the existing pixel-signal product identity remains intact.
-- Accurate title and canonical metadata for every deep-linkable app view.
-- Plain, claim-covered checkout and license copy; no untested merchant or
-  refund-handling promise remains.
-- PWA version bumped to 1.0.7, including the service worker, manifest start
-  URL, and visible build IDs.
-- Updated verb-first catalog description and copy audit.
+Completed a fresh adversarial first-read review on live Chromium at 390 × 844
+and 1440 × 900. Checked all landing and README copy, one-click sample entry,
+demo reset and real-data isolation, offline reload, request privacy, every
+registered claim, metadata, deep links, Back/focus behavior, internal links,
+404 handling, accessibility, visual identity, missed leverage, and every
+finding from reviews 1 and 2.
 
-## Exact verification
+The complete result and finding-by-finding history table are in
+`.factory/review-3.md`. Product code was not modified.
 
-Fresh final clone: `/tmp/chore-rulebook-polish-2-final.6BxOVO`.
+## Verification
 
-```sh
-npm ci
-# all 16 individual commands declared in .factory/claims.json
-npm run check
-```
-
-All 16 claim commands passed independently. `npm run check` passed with 15
-Vitest tests, TypeScript, production build, and 68 Playwright checks. The build
-produces `dist/index.html`; initial app JS is 15.40 kB gzip and CSS is 5.57 kB
-gzip.
-
-Post-deploy, `verify-url.sh` passed `/`, `/demo`, `/privacy`, and `/terms`.
-Live route, title, header-link, 44 px target, mobile-overflow, 404, manifest,
-offline-reload, and copy checks passed. Live Playwright axe scans found zero
-serious/critical findings on all product routes and views. Lighthouse mobile
-was 99 performance / 100 accessibility, with 1.1 s LCP and CLS 0.
-
-Evidence and every finding-to-fix mapping: `.factory/polish-2.md`; screenshots
-and reports: `.factory/evidence/polish-2/` (workspace evidence, intentionally
-ignored by Git).
-
-## Run and deploy
+Clean clone: `/tmp/chore-rulebook-review-3.HJ4sN4` at the reviewed commit.
 
 ```sh
 npm ci
-npm run dev
+# Run each of the 16 commands declared in .factory/claims.json separately.
 npm run check
-npm run build
-/opt/fleet/lib/deploy-static.sh chore-rulebook dist
 ```
 
-## Remaining work
+All 16 claim commands passed independently. Per-claim output is at
+`/tmp/review3-claim-<id>.log`. `npm run check` passed 15 Vitest tests,
+TypeScript, a production build, and 68 Playwright tests. The build produced
+`dist/index.html`; initial JavaScript totals 25.57 kB gzip.
 
-None. The product is deployed as a static, offline-first PWA. There are no
-known gaps.
+Live checks confirmed:
+
+- the required first-screen answers and three facts fit at 390 px;
+- `/demo` immediately shows four populated Cedar House assignments;
+- Reset restores sample state and Start for real preserves the separate real
+  rulebook;
+- offline reload succeeds after service-worker control and HTTP cache clear;
+- all demo workflow requests are same-origin;
+- all normal internal links and required static assets respond successfully;
+- every app view has the expected title, canonical, one h1, and route focus;
+- the designed unknown route returns HTTP 404 with the full site skeleton;
+- live axe scans report no serious or critical issue on every route and view;
+- all nine earlier findings remain fixed in live behavior and source.
+
+Cold screenshots are `/tmp/review3-mobile-cold.png` and
+`/tmp/review3-desktop-cold.png`.
+
+## Known gaps and next steps
+
+None in the reviewed scope. No deploy was requested or performed. Preserve the
+current claim, demo, copy, routing, and accessibility regressions when the
+product changes.
